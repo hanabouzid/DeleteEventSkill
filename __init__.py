@@ -31,7 +31,7 @@ class DeleteEventSkill(MycroftSkill):
     @property
     def utc_offset(self):
         return timedelta(seconds=self.location['timezone']['offset'] / 1000)
-    @intent_handler(IntentBuilder("delete_event_intent").require("delete").require("Event").optionally("date").optionally("Location").build())
+    @intent_handler(IntentBuilder("delete_event_intent").require("delete").require("Event").optionally("date").build())
     def deleteEvent(self, message):
         #AUTHORIZE
         creds = None
@@ -71,17 +71,14 @@ class DeleteEventSkill(MycroftSkill):
         #extraire la date et le titre
         utt = message.data.get("utterance", None)
         list1=utt.split(" starts ")
-        list2=list1[1].split(" in ")
-        strtdate=list2[0]
-        location=list2[1]
-        print(location)
+        strtdate=list1[1]
         st = extract_datetime(strtdate)
         st = st[0] - self.utc_offset
         date = st.strftime('%Y-%m-%dT%H:%M:00')
         date += UTC_TZ
         print("the date is",date)
-        list3=list1[0].split(" event ")
-        title=list3[1]
+        list2=list1[0].split(" event ")
+        title=list2[1]
         print("the title is", title)
         events = service.events().list(calendarId='primary', timeMin=date, singleEvents=True,orderBy='startTime').execute()
         for event in events['items']:
@@ -89,7 +86,7 @@ class DeleteEventSkill(MycroftSkill):
             print (start)
             room =event['location']
             print(room)
-            if(event['summary']== title and room ==location):
+            if event['summary']== title :
                 eventid=event['id']
                 service.events().delete(calendarId='primary', eventId=eventid, sendUpdates='all').execute()
                 self.speak_dialog("eventdeleted",data={"title": title})
