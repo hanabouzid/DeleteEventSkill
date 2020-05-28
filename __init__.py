@@ -74,6 +74,7 @@ class DeleteEventSkill(MycroftSkill):
         list2=list1[1].split(" in ")
         strtdate=list2[0]
         location=list2[1]
+        print(location)
         st = extract_datetime(strtdate)
         st = st[0] - self.utc_offset
         date = st.strftime('%Y-%m-%dT%H:%M:00')
