@@ -87,11 +87,5 @@ class DeleteEventSkill(MycroftSkill):
                 self.speak_dialog("eventdeleted",data={"title": title})
             else:
                 self.speak_dialog("notevent")
-
-
-
-
-
-
 def create_skill():
     return DeleteEventSkill()
