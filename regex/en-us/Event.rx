@@ -1,1 +1,1 @@
-(?:the event(?P<Event>.+) starts)
+(?:the event(?P<Event>.+))
