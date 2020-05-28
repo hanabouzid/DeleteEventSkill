@@ -1,15 +1,22 @@
 from __future__ import print_function
-import pickle
-import os.path
-from mycroft.util.parse import extract_datetime
-from datetime import datetime, timedelta
+import json
+import sys
 from adapt.intent import IntentBuilder
+from adapt.engine import IntentDeterminationEngine
 from mycroft.skills.core import MycroftSkill, intent_handler
 from mycroft.util.log import LOG
+from mycroft.messagebus.message import Message
+from mycroft.util.parse import extract_datetime
+from datetime import datetime, timedelta
+import pickle
+import os.path
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import httplib2
 from googleapiclient.discovery import build
+
+
+
 UTC_TZ = u'+00:00'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
@@ -26,7 +33,7 @@ class DeleteEventSkill(MycroftSkill):
         return timedelta(seconds=self.location['timezone']['offset'] / 1000)
     @intent_handler(IntentBuilder("delete_event_intent").require("delete").require("Event").require("date").build())
     def deleteEvent(self, message):
-        # AUTHORIZE
+        #AUTHORIZE
         creds = None
         # The file token.pickle stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
@@ -45,7 +52,22 @@ class DeleteEventSkill(MycroftSkill):
                 # Save the credentials for the next run
             with open('token.pickle', 'wb') as token:
                 pickle.dump(creds, token)
+
         service = build('calendar', 'v3', credentials=creds)
+
+        # Call the Calendar API
+        now = datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+        print('Getting the upcoming 10 events')
+        events_result = service.events().list(calendarId='primary', timeMin=now,
+                                              maxResults=10, singleEvents=True,
+                                              orderBy='startTime').execute()
+        events = events_result.get('items', [])
+
+        if not events:
+            print('No upcoming events found.')
+        for event in events:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            print(start, event['summary'])
         #extraire la date et le titre
         utt = message.data.get("utterance", None)
         list1=utt.split(" starts ")
@@ -58,7 +80,8 @@ class DeleteEventSkill(MycroftSkill):
         title=list2[1]
         events = service.events().list(calendarId='primary', timeMin=date, singleEvents=True).execute()
         for event in events['items']:
-            if(event['summary']== title and event['start'].get('dateTime') ==date):
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            if(event['summary']== title and start ==date):
                 eventid=event['id']
                 service.events().delete(calendarId='primary', eventId=eventid, sendUpdates='all').execute()
                 self.speak_dialog("eventdeleted",data={"title": title})
