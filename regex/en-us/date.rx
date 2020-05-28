@@ -1,1 +1,1 @@
-(?:starts(?P<Date>.*))
+(?P<Date>.*)(am|pm)
