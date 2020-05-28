@@ -67,7 +67,7 @@ class DeleteEventSkill(MycroftSkill):
 
         events = service.events().list(calendarId='primary', timeMin=date, singleEvents=True).execute()
         for event in events['items']:
-            if(event['summary']== title and event['start']['dateTime'] ==date):
+            if(event['summary']== title and event['start'].get('dateTime') ==date):
                 eventid=event['id']
                 service.events().delete(calendarId='primary', eventId=eventid, sendUpdates='all').execute()
                 self.speak_dialog("eventdeleted",data={"title": title})
