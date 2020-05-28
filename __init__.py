@@ -56,15 +56,14 @@ class DeleteEventSkill(MycroftSkill):
         service = build('calendar', 'v3', credentials=creds)
         #extraire la date et le titre
         utt = message.data.get("utterance", None)
-        liste1=utt.split(" event ")
-        liste2 = liste1[1].split(" starts ")
-        title=liste2[0]
-        strtdate=liste2[1]
+        list1=utt.split(" starts ")
+        strtdate=list1[1]
         st = extract_datetime(strtdate)
         st = st[0] - self.utc_offset
         date = st.strftime('%Y-%m-%dT%H:%M:00')
         date += UTC_TZ
-
+        list2=list1[0].split(" event ")
+        title=list2[1]
         events = service.events().list(calendarId='primary', timeMin=date, singleEvents=True).execute()
         for event in events['items']:
             if(event['summary']== title and event['start'].get('dateTime') ==date):
