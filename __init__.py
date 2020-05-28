@@ -31,7 +31,7 @@ class DeleteEventSkill(MycroftSkill):
     @property
     def utc_offset(self):
         return timedelta(seconds=self.location['timezone']['offset'] / 1000)
-    @intent_handler(IntentBuilder("delete_event_intent").require("delete").require("Event").require("date").build())
+    @intent_handler(IntentBuilder("delete_event_intent").require("delete").require("Event").optionally("date").build())
     def deleteEvent(self, message):
         #AUTHORIZE
         creds = None
@@ -76,12 +76,15 @@ class DeleteEventSkill(MycroftSkill):
         st = st[0] - self.utc_offset
         date = st.strftime('%Y-%m-%dT%H:%M:00')
         date += UTC_TZ
+        print("the date is",date)
         list2=list1[0].split(" event ")
         title=list2[1]
+        print("the title is", title)
         events = service.events().list(calendarId='primary', timeMin=date, singleEvents=True).execute()
         for event in events['items']:
             start = event['start'].get('dateTime', event['start'].get('date'))
-            if(event['summary']== title and start ==date):
+            print (start)
+            if(event['summary']== title and start == date):
                 eventid=event['id']
                 service.events().delete(calendarId='primary', eventId=eventid, sendUpdates='all').execute()
                 self.speak_dialog("eventdeleted",data={"title": title})
