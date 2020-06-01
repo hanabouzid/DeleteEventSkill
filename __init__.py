@@ -31,7 +31,7 @@ class DeleteEventSkill(MycroftSkill):
     @property
     def utc_offset(self):
         return timedelta(seconds=self.location['timezone']['offset'] / 1000)
-    @intent_handler(IntentBuilder("delete_event_intent").require("delete").require("Event").optionally("date").build())
+    @intent_handler(IntentBuilder("delete_event_intent").require('update').require('Event').optionally('time').optionally('Location').build())
     def deleteEvent(self, message):
         #AUTHORIZE
         creds = None
@@ -70,25 +70,38 @@ class DeleteEventSkill(MycroftSkill):
             print(start, event['summary'])
         #extraire la date et le titre
         utt = message.data.get("utterance", None)
-        list1=utt.split(" starts ")
-        strtdate=list1[1]
+
+        # extract the location
+        # location = message.data.get("Location", None)
+        print(utt)
+        # listname1=utt.split(" named ")
+        # listname2=listname1[1].split(" with ")
+        # title =listname2[0]
+        lister = utt.split(" starts ")
+        lister2 = lister[1].split(" in ")
+        location = lister2[1]
+        print(location)
+        strtdate = lister2[0]
         st = extract_datetime(strtdate)
         st = st[0] - self.utc_offset
-        date = st.strftime('%Y-%m-%dT%H:%M:00')
-        date += UTC_TZ
-        print("the date is",date)
-        list2=list1[0].split(" event ")
-        title=list2[1]
-        print("the title is", title)
-        events = service.events().list(calendarId='primary', timeMin=date,orderBy='startTime', singleEvents=True).execute()
-        for event in events['items']:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            print (start)
-            if(event['summary']== title):
-                eventid=event['id']
-                service.events().delete(calendarId='primary', eventId=eventid, sendUpdates='all').execute()
-                self.speak_dialog("eventdeleted",data={"title": title})
-            else:
-                self.speak_dialog("notevent")
+        datestart = st.strftime('%Y-%m-%dT%H:%M:00')
+        datestart += UTC_TZ
+        print(datestart)
+        lister3 = lister[0].split(" the event ")
+        title = lister3[1]
+        print(title)
+        events_result = service.events().list(calendarId='primary', timeMin=datestart,
+                                              maxResults=1, singleEvents=True,
+                                              orderBy='startTime', q=location).execute()
+        events = events_result.get('items', [])
+        if not events:
+            self.speak_dialog("notEvent")
+
+        for event in events:
+            eventid = event['id']
+            service.events().delete(calendarId='primary', eventId=eventid, sendUpdates='all').execute()
+            self.speak_dialog("eventdeleted", data={"title": title})
+
+
 def create_skill():
     return DeleteEventSkill()
