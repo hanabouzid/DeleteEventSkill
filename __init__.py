@@ -31,7 +31,7 @@ class DeleteEventSkill(MycroftSkill):
     @property
     def utc_offset(self):
         return timedelta(seconds=self.location['timezone']['offset'] / 1000)
-    @intent_handler(IntentBuilder("delete_event_intent").require('update').require('Event').optionally('date').optionally('Location').build())
+    @intent_handler(IntentBuilder("delete_event_intent").require('delete').require('Event').optionally('date').optionally('Location').build())
     def deleteEvent(self, message):
         #AUTHORIZE
         creds = None
